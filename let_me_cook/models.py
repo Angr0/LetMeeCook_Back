@@ -25,7 +25,14 @@ class Flavour(models.Model):
         return f"{self.name}"
 
 
-class User(models.Model):
+class Type(models.Model):
+    name = models.CharField(max_length=250)
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class AppUser(models.Model):
     login = models.CharField(max_length=250)
     password = models.CharField(max_length=250)
     is_male = models.BooleanField()
@@ -35,32 +42,44 @@ class User(models.Model):
     bmi = models.FloatField()
     bmr = models.FloatField()
     streak = models.PositiveIntegerField()
-    excluded_ingredients = models.ManyToManyField(Ingredient, related_name='user_excluded_ingredient')
-    favourite_recipes = models.ManyToManyField('Recipe')
-    stored_ingredients = models.ManyToManyField(Ingredient, related_name='user_stored_ingredient')
+    excluded_ingredients = models.ManyToManyField(Ingredient, related_name='user_excluded_ingredient', blank=True)
+    favourite_recipes = models.ManyToManyField('Recipe', blank=True)
+    stored_ingredients = models.ManyToManyField(Ingredient, blank=True, through='StoredIngredient')
 
     def __str__(self):
         return f"{self.login}"
 
 
+class StoredIngredient(models.Model):
+    appUser = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    quantity = models.FloatField()
+
+
 class Recipe(models.Model):
     name = models.CharField(max_length=250)
-    ingredients = models.ManyToManyField(Ingredient)
+    ingredients = models.ManyToManyField(Ingredient, blank=True, through='RecipeIngredient')
     steps = models.CharField(max_length=10000)
     is_warm = models.BooleanField()
-    type = models.CharField(max_length=250)
+    type = models.ForeignKey(Type, on_delete=models.CASCADE)
     categories = models.ManyToManyField(Category)
     flavours = models.ManyToManyField(Flavour)
     icon_link = models.CharField(max_length=10000)
     is_public = models.BooleanField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(AppUser, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.name}"
 
 
+class RecipeIngredient(models.Model):
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    quantity = models.FloatField()
+
+
 class CookingHistory(models.Model):
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    user = models.ForeignKey(AppUser, on_delete=models.DO_NOTHING)
     recipe = models.ForeignKey(Recipe, on_delete=models.DO_NOTHING)
     portions = models.PositiveIntegerField()
     date = models.DateTimeField()

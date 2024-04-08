@@ -17,6 +17,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from let_me_cook import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('users/', views.manageUsers),
+    path('recipes/', views.recipes),
+    path('recipe/<str:recipe_name>/', views.recipe),
+    path('cooking-history/<str:user_login>/', views.cookingHistory),
+    path('cooking-history/', views.cookingHistory),
+    path('fridge/<str:user_login>/', views.fridge),
+    path('bio-calc/<str:user_login>/', views.userBmi),
+    path('user-data/<str:user_login>/', views.userData),
+    path('favourite-recipes/<str:user_login>/', views.favouriteRecipes),
 ]
