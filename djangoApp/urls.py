@@ -22,6 +22,7 @@ from let_me_cook import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/', views.manageUsers),
+    path('login/', views.loginUser),
     path('recipes/', views.recipes),
     path('recipe/<str:recipe_name>/', views.recipe),
     path('cooking-history/<str:user_login>/', views.cookingHistory),

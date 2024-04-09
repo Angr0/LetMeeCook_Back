@@ -1,5 +1,5 @@
 import json
-
+import hashlib
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -14,7 +14,7 @@ def manageUsers(request):
         body = json.loads(request.body)
         dataObject = AppUser.objects.create(
             login=body['login'],
-            password=body['password'],
+            password=hashlib.sha256(body['password'].encode('utf-8')).hexdigest(),
             is_male=body['is_male'],
             height=body['height'],
             weight=body['weight'],
@@ -26,6 +26,20 @@ def manageUsers(request):
         dataObject.save()
         return JsonResponse({"User added": {"login": dataObject.login}}, status=201)
     return noMethodPermission()
+
+
+def loginUser(request):
+    if request.method == "GET":
+        loginData = json.loads(request.body)
+        try:
+            tryUser = AppUser.objects.get(login=loginData['login'])
+            tryPassword = hashlib.sha256(loginData['password'].encode('utf-8')).hexdigest()
+            if tryPassword == tryUser.password:
+                return JsonResponse({"password matches": True}, status=200)
+            else:
+                return JsonResponse({"password matches": False}, status=403)
+        except AppUser.DoesNotExist:
+            return JsonResponse({"error": "user does not exist"}, status=403)
 
 
 @csrf_exempt
