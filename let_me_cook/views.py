@@ -123,6 +123,8 @@ def returnRecipes(foundRecipes):
         recipeObject = {
             'name': foundRecipe.name,
             'icon_link': foundRecipe.icon_link,
+            'is_warm': foundRecipe.is_warm,
+            'flavours': list(foundRecipe.flavours.values_list('name', flat=True)),
             'type': foundRecipe.type.name,
             'categories': list(foundRecipe.categories.values_list('name', flat=True)),
             'ingredients': ingredientsList
