@@ -289,6 +289,24 @@ def recipe(request, recipe_name):
     return noMethodPermission()
 
 
+def searchBar(request):
+    if request.method == "GET":
+        allRecipes = Recipe.objects.all()
+        returnData = []
+        for operatedRecipe in allRecipes:
+            recipeIngredients = RecipeIngredient.objects.filter(recipe=operatedRecipe)
+            ingredients = []
+            for recipeIngredient in recipeIngredients:
+                ingredients.append(recipeIngredient.ingredient.name)
+            recipeObject = {
+                'name': operatedRecipe.name,
+                'ingredients': ingredients
+            }
+            returnData.append(recipeObject)
+        return JsonResponse(returnData, safe=False, status=200)
+    return noMethodPermission()
+
+
 @csrf_exempt
 def cookingHistory(request, user_login=0):
     if request.method == "GET":
