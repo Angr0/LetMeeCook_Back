@@ -1,11 +1,10 @@
 import json
 
-from django.forms import model_to_dict
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from let_me_cook.models import AppUser, Recipe, Type, Ingredient, Category, Flavour, CookingHistory, StoredIngredient, \
-    RecipeIngredient
+    RecipeIngredient, Step
 
 
 # Create your views here.
@@ -20,8 +19,6 @@ def manageUsers(request):
             height=body['height'],
             weight=body['weight'],
             age=body['age'],
-            bmi=body['bmi'],
-            bmr=body['bmr'],
             streak=0
         )
         dataObject.excluded_ingredients.add(None)
@@ -57,6 +54,29 @@ def userData(request, user_login):
     return noMethodPermission()
 
 
+def allIngredients(request):
+    if request.method == "GET":
+        allIngredients = Ingredient.objects.values('name', 'unit_name', 'icon_link')
+        return JsonResponse(list(allIngredients), safe=False, status=302)
+    return noMethodPermission()
+
+
+def ingredients(request):
+    if request.method == "GET":
+        ingredientsList = json.loads(request.body)
+        foundIngredients = Ingredient.objects.filter(name__in=ingredientsList)
+        ingredientsToReturn = []
+        for ingredient in foundIngredients:
+            ingredientObject = {
+                'name': ingredient.name,
+                'unit_name': ingredient.unit_name,
+                'icon_link': ingredient.icon_link
+            }
+            ingredientsToReturn.append(ingredientObject)
+        return JsonResponse(ingredientsToReturn, safe=False, status=302)
+    return noMethodPermission()
+
+
 @csrf_exempt
 def userBmi(request, user_login):
     if request.method == "GET":
@@ -66,21 +86,35 @@ def userBmi(request, user_login):
             'height': userObject.height,
             'weight': userObject.weight,
             'age': userObject.age,
-            'bmi': userObject.bmi,
-            'bmr': userObject.bmr
         }
         return JsonResponse(bmiData, status=302)
     if request.method == "PUT":
         body = json.loads(request.body)
         updatedUser = AppUser.objects.get(login=user_login)
         updatedUser.age = body['age']
-        updatedUser.bmi = body['bmi']
-        updatedUser.bmr = body['bmr']
         updatedUser.height = body['height']
         updatedUser.weight = body['weight']
         updatedUser.save()
         return JsonResponse({"updated user": user_login}, status=302)
     return noMethodPermission()
+
+
+def returnRecipes(foundRecipes):
+    recipesToReturn = []
+    for foundRecipe in foundRecipes:
+        recipeIngredients = RecipeIngredient.objects.filter(recipe=foundRecipe)
+        ingredientsList = []
+        for recipeIngredient in recipeIngredients:
+            ingredientsList.append(recipeIngredient.ingredient.name)
+        recipeObject = {
+            'name': foundRecipe.name,
+            'icon_link': foundRecipe.icon_link,
+            'type': foundRecipe.type.name,
+            'categories': list(foundRecipe.categories.values_list('name', flat=True)),
+            'ingredients': ingredientsList
+        }
+        recipesToReturn.append(recipeObject)
+    return JsonResponse(recipesToReturn, safe=False, status=302)
 
 
 @csrf_exempt
@@ -92,7 +126,9 @@ def fridge(request, user_login):
         for ingredient in fridgeElements:
             ingredientDict = {
                 'ingredient_name': ingredient.ingredient.name,
-                'quantity': ingredient.quantity
+                'quantity': ingredient.quantity,
+                'unit_name': ingredient.ingredient.unit_name,
+                'icon_link': ingredient.ingredient.icon_link
             }
             storedList.append(ingredientDict)
         return JsonResponse(storedList, safe=False, status=302)
@@ -114,16 +150,57 @@ def fridge(request, user_login):
                 )
                 addingStoredIngredient.save()
         return JsonResponse({"Message": "Added ingredients and quantities to database"}, status=201)
+    if request.method == "DELETE":
+        operatedUser = AppUser.objects.get(login=user_login)
+        ingredientToDeleteName = json.loads(request.body)
+        for ingredientElement in ingredientToDeleteName:
+            ingredientObject = Ingredient.objects.get(name=ingredientElement)
+            ingredientToDelete = StoredIngredient.objects.get(appUser=operatedUser, ingredient=ingredientObject)
+            ingredientToDelete.delete()
+            return JsonResponse({"Deleted ingredient from fridge": ingredientElement}, status=202)
+    return noMethodPermission()
+
+
+def checkFridgeQuantity(operatedUser, recipesList):
+    fridgeAccurateRecipes = []
+    for recipeElement in recipesList:
+        allRecipeIngredients = list(RecipeIngredient.objects.filter(recipe=recipeElement))
+        canAdd = True
+        for recipeIngredient in allRecipeIngredients:
+            print(recipeIngredient)
+            requiredIngredientQuantity = recipeIngredient.quantity
+            try:
+                fridgeUserIngredient = StoredIngredient.objects.get(appUser=operatedUser, ingredient=recipeIngredient.ingredient)
+                fridgeIngredientQuantity = fridgeUserIngredient.quantity
+            except StoredIngredient.DoesNotExist:
+                fridgeIngredientQuantity = 0
+            if fridgeIngredientQuantity < requiredIngredientQuantity:
+                canAdd = False
+                break
+        if canAdd:
+            fridgeAccurateRecipes.append(recipeElement)
+    return fridgeAccurateRecipes
+
+
+def filteredRecipes(request, user_login):
+    if request.method == "GET":
+        operatedUser = AppUser.objects.get(login=user_login)
+        excludedIngredientsList = list(operatedUser.excluded_ingredients.all())
+        recipesWithoutExcluded = Recipe.objects.exclude(ingredients__in=excludedIngredientsList)
+        fridgeFilteredRecipes = checkFridgeQuantity(operatedUser, recipesWithoutExcluded)
+        return returnRecipes(fridgeFilteredRecipes)
     return noMethodPermission()
 
 
 @csrf_exempt
 def recipes(request):
+    if request.method == "GET":
+        recipesToReturn = Recipe.objects.filter(is_public=True)
+        return returnRecipes(recipesToReturn)
     if request.method == "POST":
         body = json.loads(request.body)
         dataObject = Recipe.objects.create(
             name=body['name'],
-            steps=body['steps'],
             is_warm=body['is_warm'],
             type=Type.objects.get(name=body['type_name']),
             icon_link=body['icon_link'],
@@ -143,7 +220,23 @@ def recipes(request):
                 quantity=ingredientQuantity
             )
             addingIngredient.save()
+        stepsList = body['steps']
+        for step in stepsList:
+            stepObject = Step.objects.create(
+                recipe=dataObject,
+                step_number=step['number'],
+                step_description=step['description']
+            )
+            stepObject.save()
         return JsonResponse({"Recipe added": {"name": dataObject.name}}, status=201)
+    return noMethodPermission()
+
+
+def privateRecipes(request, user_login):
+    if request.method == "GET":
+        operatedUser = AppUser.objects.get(login=user_login)
+        userRecipes = Recipe.objects.filter(is_public=False, author=operatedUser)
+        return returnRecipes(userRecipes)
     return noMethodPermission()
 
 
@@ -159,17 +252,24 @@ def recipe(request, recipe_name):
                 'unit': recipeIngredient.ingredient.unit_name
             }
             ingredients.append(ingredientElement)
+        recipeSteps = Step.objects.filter(recipe=recipeToReturn)
+        steps = []
+        for recipeStep in recipeSteps:
+            stepElement = {
+                'number': recipeStep.step_number,
+                'description': recipeStep.step_description
+            }
+            steps.append(stepElement)
         returnBody = {
             'name': recipeToReturn.name,
-            'steps': recipeToReturn.steps,
             'ingredients': ingredients,
             'is_warm': recipeToReturn.is_warm,
             'icon_link': recipeToReturn.icon_link,
-            'is_public': recipeToReturn.is_public,
             'categories': list(recipeToReturn.categories.values_list('name', flat=True)),
             'flavours': list(recipeToReturn.flavours.values_list('name', flat=True)),
             'type_name': recipeToReturn.type.name,
-            'author_login': recipeToReturn.author.login
+            'author_login': recipeToReturn.author.login,
+            'steps': steps
         }
         return JsonResponse(returnBody, status=302)
     return noMethodPermission()
@@ -230,6 +330,20 @@ def favouriteRecipes(request, user_login):
         operatedUser.favourite_recipes.remove(recipeToRemove)
         operatedUser.save()
         return JsonResponse({"Removed favourite recipe": recipeToRemove.name}, status=202)
+    return noMethodPermission()
+
+
+def categories(request):
+    if request.method == "GET":
+        allCategories = Category.objects.values_list('name', flat=True)
+        return JsonResponse(list(allCategories), safe=False, status=302)
+    return noMethodPermission()
+
+
+def flavours(request):
+    if request.method == "GET":
+        allFlavours = Flavour.objects.values_list('name', flat=True)
+        return JsonResponse(list(allFlavours), safe=False, status=302)
     return noMethodPermission()
 
 

@@ -30,4 +30,10 @@ urlpatterns = [
     path('bio-calc/<str:user_login>/', views.userBmi),
     path('user-data/<str:user_login>/', views.userData),
     path('favourite-recipes/<str:user_login>/', views.favouriteRecipes),
+    path('categories/', views.categories),
+    path('flavours/', views.flavours),
+    path('all-ingredients/', views.allIngredients),
+    path('ingredients/', views.ingredients),
+    path('private-recipes/<str:user_login>/', views.privateRecipes),
+    path('filtered-recipes/<str:user_login>/', views.filteredRecipes),
 ]
