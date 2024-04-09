@@ -38,7 +38,7 @@ def userData(request, user_login):
             'is_male': userObject.is_male,
             'excluded_ingredients': list(userObject.excluded_ingredients.values_list('name', flat=True))
         }
-        return JsonResponse(userDataset, status=302)
+        return JsonResponse(userDataset, status=200)
     if request.method == "PUT":
         body = json.loads(request.body)
         updatedUser = AppUser.objects.get(login=user_login)
@@ -50,14 +50,14 @@ def userData(request, user_login):
             ingredientToExclude = Ingredient.objects.get(name=ingredient)
             updatedUser.excluded_ingredients.add(ingredientToExclude)
         updatedUser.save()
-        return JsonResponse({"updated user": user_login}, status=302)
+        return JsonResponse({"updated user": user_login}, status=200)
     return noMethodPermission()
 
 
 def allIngredients(request):
     if request.method == "GET":
         allIngredients = Ingredient.objects.values('name', 'unit_name', 'icon_link')
-        return JsonResponse(list(allIngredients), safe=False, status=302)
+        return JsonResponse(list(allIngredients), safe=False, status=200)
     return noMethodPermission()
 
 
@@ -73,7 +73,7 @@ def ingredients(request):
                 'icon_link': ingredient.icon_link
             }
             ingredientsToReturn.append(ingredientObject)
-        return JsonResponse(ingredientsToReturn, safe=False, status=302)
+        return JsonResponse(ingredientsToReturn, safe=False, status=200)
     return noMethodPermission()
 
 
@@ -87,7 +87,7 @@ def userBmi(request, user_login):
             'weight': userObject.weight,
             'age': userObject.age,
         }
-        return JsonResponse(bmiData, status=302)
+        return JsonResponse(bmiData, status=200)
     if request.method == "PUT":
         body = json.loads(request.body)
         updatedUser = AppUser.objects.get(login=user_login)
@@ -95,7 +95,7 @@ def userBmi(request, user_login):
         updatedUser.height = body['height']
         updatedUser.weight = body['weight']
         updatedUser.save()
-        return JsonResponse({"updated user": user_login}, status=302)
+        return JsonResponse({"updated user": user_login}, status=200)
     return noMethodPermission()
 
 
@@ -114,7 +114,7 @@ def returnRecipes(foundRecipes):
             'ingredients': ingredientsList
         }
         recipesToReturn.append(recipeObject)
-    return JsonResponse(recipesToReturn, safe=False, status=302)
+    return JsonResponse(recipesToReturn, safe=False, status=200)
 
 
 @csrf_exempt
@@ -131,7 +131,7 @@ def fridge(request, user_login):
                 'icon_link': ingredient.ingredient.icon_link
             }
             storedList.append(ingredientDict)
-        return JsonResponse(storedList, safe=False, status=302)
+        return JsonResponse(storedList, safe=False, status=200)
     if request.method == "PUT":
         ingredientsDicts = json.loads(request.body)
         operatedUser = AppUser.objects.get(login=user_login)
@@ -149,7 +149,7 @@ def fridge(request, user_login):
                     quantity=ingredientQuantity
                 )
                 addingStoredIngredient.save()
-        return JsonResponse({"Message": "Added ingredients and quantities to database"}, status=201)
+        return JsonResponse({"Message": "Added ingredients and quantities to database"}, status=200)
     if request.method == "DELETE":
         operatedUser = AppUser.objects.get(login=user_login)
         ingredientToDeleteName = json.loads(request.body)
@@ -157,7 +157,7 @@ def fridge(request, user_login):
             ingredientObject = Ingredient.objects.get(name=ingredientElement)
             ingredientToDelete = StoredIngredient.objects.get(appUser=operatedUser, ingredient=ingredientObject)
             ingredientToDelete.delete()
-            return JsonResponse({"Deleted ingredient from fridge": ingredientElement}, status=202)
+            return JsonResponse({"Deleted ingredient from fridge": ingredientElement}, status=200)
     return noMethodPermission()
 
 
@@ -228,7 +228,7 @@ def recipes(request):
                 step_description=step['description']
             )
             stepObject.save()
-        return JsonResponse({"Recipe added": {"name": dataObject.name}}, status=201)
+        return JsonResponse({"Recipe added": {"name": dataObject.name}}, status=200)
     return noMethodPermission()
 
 
@@ -271,7 +271,7 @@ def recipe(request, recipe_name):
             'author_login': recipeToReturn.author.login,
             'steps': steps
         }
-        return JsonResponse(returnBody, status=302)
+        return JsonResponse(returnBody, status=200)
     return noMethodPermission()
 
 
@@ -298,7 +298,7 @@ def cookingHistory(request, user_login=0):
             date=body['date']
         )
         dataObject.save()
-        return JsonResponse({"History object added": {"user": dataObject.user.login, "recipe": dataObject.recipe.name}}, status=201)
+        return JsonResponse({"History object added": {"user": dataObject.user.login, "recipe": dataObject.recipe.name}}, status=200)
     return noMethodPermission()
 
 
@@ -329,21 +329,21 @@ def favouriteRecipes(request, user_login):
         recipeToRemove = Recipe.objects.get(name=body['name'])
         operatedUser.favourite_recipes.remove(recipeToRemove)
         operatedUser.save()
-        return JsonResponse({"Removed favourite recipe": recipeToRemove.name}, status=202)
+        return JsonResponse({"Removed favourite recipe": recipeToRemove.name}, status=200)
     return noMethodPermission()
 
 
 def categories(request):
     if request.method == "GET":
         allCategories = Category.objects.values_list('name', flat=True)
-        return JsonResponse(list(allCategories), safe=False, status=302)
+        return JsonResponse(list(allCategories), safe=False, status=200)
     return noMethodPermission()
 
 
 def flavours(request):
     if request.method == "GET":
         allFlavours = Flavour.objects.values_list('name', flat=True)
-        return JsonResponse(list(allFlavours), safe=False, status=302)
+        return JsonResponse(list(allFlavours), safe=False, status=200)
     return noMethodPermission()
 
 
