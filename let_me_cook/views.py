@@ -57,7 +57,7 @@ def userData(request, user_login):
         body = json.loads(request.body)
         updatedUser = AppUser.objects.get(login=user_login)
         updatedUser.login = body['login']
-        updatedUser.password = body['password']
+        updatedUser.password = hashlib.sha256(body['password'].encode('utf-8')).hexdigest(),
         updatedUser.is_male = body['is_male']
         updatedUser.excluded_ingredients.clear()
         for ingredient in body['excluded_ingredients']:
@@ -72,6 +72,15 @@ def allIngredients(request):
     if request.method == "GET":
         allIngredients = Ingredient.objects.values('name', 'unit_name', 'icon_link')
         return JsonResponse(list(allIngredients), safe=False, status=200)
+    return noMethodPermission()
+
+
+def notExcludedIngredients(request, user_login):
+    if request.method == "GET":
+        updatedUser = AppUser.objects.get(login=user_login)
+        excludedIngredients = list(updatedUser.excluded_ingredients.values_list('name', flat=True))
+        noExcludedIngredients = list(Ingredient.objects.exclude(name__in=excludedIngredients).values_list('name', flat=True))
+        return JsonResponse(noExcludedIngredients, safe=False, status=200)
     return noMethodPermission()
 
 
