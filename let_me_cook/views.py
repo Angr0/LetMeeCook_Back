@@ -28,8 +28,9 @@ def manageUsers(request):
     return noMethodPermission()
 
 
+@csrf_exempt
 def loginUser(request):
-    if request.method == "GET":
+    if request.method == "POST":
         loginData = json.loads(request.body)
         try:
             tryUser = AppUser.objects.get(login=loginData['login'])
@@ -40,6 +41,7 @@ def loginUser(request):
                 return JsonResponse({"password matches": False}, status=403)
         except AppUser.DoesNotExist:
             return JsonResponse({"error": "user does not exist"}, status=403)
+    return noMethodPermission()
 
 
 @csrf_exempt
@@ -84,8 +86,9 @@ def notExcludedIngredients(request, user_login):
     return noMethodPermission()
 
 
+@csrf_exempt
 def ingredients(request):
-    if request.method == "GET":
+    if request.method == "POST":
         ingredientsList = json.loads(request.body)
         foundIngredients = Ingredient.objects.filter(name__in=ingredientsList)
         ingredientsToReturn = []
