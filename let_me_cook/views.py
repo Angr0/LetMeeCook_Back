@@ -50,7 +50,6 @@ def userData(request, user_login):
         userObject = AppUser.objects.get(login=user_login)
         userDataset = {
             'login': userObject.login,
-            'password': userObject.password,
             'is_male': userObject.is_male,
             'excluded_ingredients': list(userObject.excluded_ingredients.values_list('name', flat=True))
         }
@@ -59,7 +58,6 @@ def userData(request, user_login):
         body = json.loads(request.body)
         updatedUser = AppUser.objects.get(login=user_login)
         updatedUser.login = body['login']
-        updatedUser.password = hashlib.sha256(body['password'].encode('utf-8')).hexdigest(),
         updatedUser.is_male = body['is_male']
         updatedUser.excluded_ingredients.clear()
         for ingredient in body['excluded_ingredients']:
@@ -67,6 +65,18 @@ def userData(request, user_login):
             updatedUser.excluded_ingredients.add(ingredientToExclude)
         updatedUser.save()
         return JsonResponse({"updated user": user_login}, status=200)
+    return noMethodPermission()
+
+
+@csrf_exempt
+def changePassword(request, user_login):
+    if request.method == "PUT":
+        body = json.loads(request.body)
+        updatedUser = AppUser.objects.get(login=user_login)
+        newPass = hashlib.sha256(body['password'].encode('utf-8')).hexdigest()
+        updatedUser.password = newPass
+        updatedUser.save()
+        return JsonResponse({"changed password for user": updatedUser.login})
     return noMethodPermission()
 
 
