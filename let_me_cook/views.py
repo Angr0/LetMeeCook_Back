@@ -57,12 +57,15 @@ def userData(request, user_login):
     if request.method == "PUT":
         body = json.loads(request.body)
         updatedUser = AppUser.objects.get(login=user_login)
-        updatedUser.login = body['login']
-        updatedUser.is_male = body['is_male']
-        updatedUser.excluded_ingredients.clear()
-        for ingredient in body['excluded_ingredients']:
-            ingredientToExclude = Ingredient.objects.get(name=ingredient)
-            updatedUser.excluded_ingredients.add(ingredientToExclude)
+        ingredientToExclude = Ingredient.objects.get(name=body['name'])
+        updatedUser.excluded_ingredients.add(ingredientToExclude)
+        updatedUser.save()
+        return JsonResponse({"updated user": user_login}, status=200)
+    if request.method == "DELETE":
+        body = json.loads(request.body)
+        updatedUser = AppUser.objects.get(login=user_login)
+        ingredientToInclude = Ingredient.objects.get(name=body['name'])
+        updatedUser.excluded_ingredients.remove(ingredientToInclude)
         updatedUser.save()
         return JsonResponse({"updated user": user_login}, status=200)
     return noMethodPermission()
@@ -363,15 +366,7 @@ def favouriteRecipes(request, user_login):
     if request.method == "GET":
         operatedUser = AppUser.objects.get(login=user_login)
         foundRecipes = operatedUser.favourite_recipes.all()
-        returnRecipes = []
-        for recipe in foundRecipes:
-            recipeDict = {
-                "name": recipe.name,
-                "icon_link": recipe.icon_link,
-                "type_name": recipe.type.name
-            }
-            returnRecipes.append(recipeDict)
-        return JsonResponse(returnRecipes, safe=False, status=302)
+        return returnRecipes(foundRecipes)
     if request.method == "POST":
         operatedUser = AppUser.objects.get(login=user_login)
         body = json.loads(request.body)
