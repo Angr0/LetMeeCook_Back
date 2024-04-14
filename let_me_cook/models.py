@@ -72,6 +72,15 @@ class Recipe(models.Model):
         return f"{self.name}"
 
 
+class ShoppingList(models.Model):
+    appUser = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    quantity = models.FloatField()
+
+    def __str__(self):
+        return f"{self.appUser.login}; {self.ingredient.name}; {self.quantity}"
+
+
 class Step(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     step_number = models.PositiveIntegerField()

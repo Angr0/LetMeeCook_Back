@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from let_me_cook.models import AppUser, Recipe, Type, Ingredient, Category, Flavour, CookingHistory, StoredIngredient, \
-    RecipeIngredient, Step
+    RecipeIngredient, Step, ShoppingList
 
 
 # Create your views here.
@@ -405,6 +405,46 @@ def flavours(request):
     if request.method == "GET":
         allFlavours = Flavour.objects.values_list('name', flat=True)
         return JsonResponse(list(allFlavours), safe=False, status=200)
+    return noMethodPermission()
+
+
+@csrf_exempt
+def shoppingList(request, user_login):
+    if request.method == "PUT":
+        operatedUser = AppUser.objects.get(login=user_login)
+        ingredientsDicts = json.loads(request.body)
+        for ingredientDict in ingredientsDicts:
+            ingredientToAdd = Ingredient.objects.get(name=ingredientDict['name'])
+            ingredientQuantity = ingredientDict['quantity']
+            try:
+                operatedShoppingIngredient = ShoppingList.objects.get(appUser=operatedUser, ingredient=ingredientToAdd)
+                operatedShoppingIngredient.quantity += ingredientQuantity
+                operatedShoppingIngredient.save()
+            except ShoppingList.DoesNotExist:
+                addingShoppingIngredient = ShoppingList.objects.create(
+                    appUser=operatedUser,
+                    ingredient=ingredientToAdd,
+                    quantity=ingredientQuantity
+                )
+                addingShoppingIngredient.save()
+        return JsonResponse({"Message": "Added ingredients to shopping list"}, status=200)
+    if request.method == "DELETE":
+        operatedUser = AppUser.objects.get(login=user_login)
+        ingredientsToAdd = ShoppingList.objects.filter(appUser=operatedUser)
+        for shoppingIngredient in ingredientsToAdd:
+            try:
+                alreadyStoredIngredient = StoredIngredient.objects.get(appUser=operatedUser, ingredient=shoppingIngredient.ingredient)
+                alreadyStoredIngredient.quantity += shoppingIngredient.quantity
+                alreadyStoredIngredient.save()
+            except StoredIngredient.DoesNotExist:
+                addingStoredIngredient = StoredIngredient.objects.create(
+                    appUser=operatedUser,
+                    ingredient=shoppingIngredient.ingredient,
+                    quantity=shoppingIngredient.quantity
+                )
+                addingStoredIngredient.save()
+        ShoppingList.objects.filter(appUser=operatedUser).delete()
+        return JsonResponse({"completed shopping list of user": operatedUser.login}, status=200)
     return noMethodPermission()
 
 

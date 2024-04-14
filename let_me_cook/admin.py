@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from let_me_cook.models import Ingredient, Category, Flavour, AppUser, Recipe, CookingHistory, Type, StoredIngredient, \
-    RecipeIngredient, Step
+    RecipeIngredient, Step, ShoppingList
 
 # Register your models here.
 admin.site.register(Ingredient)
@@ -14,3 +14,4 @@ admin.site.register(Type)
 admin.site.register(StoredIngredient)
 admin.site.register(RecipeIngredient)
 admin.site.register(Step)
+admin.site.register(ShoppingList)
