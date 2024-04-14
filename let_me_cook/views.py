@@ -354,7 +354,8 @@ def cookingHistory(request, user_login=0):
             mealDict = {
                 'name': meal.recipe.name,
                 'portions': meal.portions,
-                'date': meal.date
+                'date': meal.date,
+                'icon_link': meal.recipe.icon_link
             }
             mealsList.append(mealDict)
         return JsonResponse(mealsList, safe=False, status=302)
