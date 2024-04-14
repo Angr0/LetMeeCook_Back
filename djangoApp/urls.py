@@ -40,4 +40,5 @@ urlpatterns = [
     path('filtered-recipes/<str:user_login>/', views.filteredRecipes),
     path('search-data/', views.searchBar),
     path('without-excluded/<str:user_login>/', views.notExcludedIngredients),
+    path('clear-fridge/<str:user_login>/', views.clearFridge),
 ]

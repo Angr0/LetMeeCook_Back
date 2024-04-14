@@ -83,6 +83,15 @@ def changePassword(request, user_login):
     return noMethodPermission()
 
 
+@csrf_exempt
+def clearFridge(request, user_login):
+    if request.method == "DELETE":
+        operatedUser = AppUser.objects.get(login=user_login)
+        StoredIngredient.objects.filter(appUser=operatedUser).delete()
+        return JsonResponse({"cleared fridge of user": operatedUser.login}, status=200)
+    return noMethodPermission()
+
+
 def allIngredients(request):
     if request.method == "GET":
         allIngredients = Ingredient.objects.values('name', 'unit_name', 'icon_link')
@@ -327,6 +336,7 @@ def searchBar(request):
                 ingredients.append(recipeIngredient.ingredient.name)
             recipeObject = {
                 'name': operatedRecipe.name,
+                'icon_link': operatedRecipe.icon_link,
                 'ingredients': ingredients
             }
             returnData.append(recipeObject)
