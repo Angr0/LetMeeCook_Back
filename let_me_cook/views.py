@@ -358,7 +358,7 @@ def cookingHistory(request, user_login=0):
                 'icon_link': meal.recipe.icon_link
             }
             mealsList.append(mealDict)
-        return JsonResponse(mealsList, safe=False, status=302)
+        return JsonResponse(mealsList, safe=False, status=200)
     if request.method == "POST":
         body = json.loads(request.body)
         dataObject = CookingHistory.objects.create(
