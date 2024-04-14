@@ -51,7 +51,7 @@ def userData(request, user_login):
         userDataset = {
             'login': userObject.login,
             'is_male': userObject.is_male,
-            'excluded_ingredients': list(userObject.excluded_ingredients.values_list('name', flat=True))
+            'excluded_ingredients': list(userObject.excluded_ingredients.values('name', 'icon_link'))
         }
         return JsonResponse(userDataset, status=200)
     if request.method == "PUT":
