@@ -41,4 +41,5 @@ urlpatterns = [
     path('search-data/', views.searchBar),
     path('without-excluded/<str:user_login>/', views.notExcludedIngredients),
     path('clear-fridge/<str:user_login>/', views.clearFridge),
+    path('shopping-list/<str:user_login>/', views.shoppingList),
 ]
