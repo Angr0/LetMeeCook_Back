@@ -103,7 +103,7 @@ def notExcludedIngredients(request, user_login):
     if request.method == "GET":
         updatedUser = AppUser.objects.get(login=user_login)
         excludedIngredients = list(updatedUser.excluded_ingredients.values_list('name', flat=True))
-        noExcludedIngredients = list(Ingredient.objects.exclude(name__in=excludedIngredients).values_list('name', flat=True))
+        noExcludedIngredients = list(Ingredient.objects.exclude(name__in=excludedIngredients).values('name', 'icon_link'))
         return JsonResponse(noExcludedIngredients, safe=False, status=200)
     return noMethodPermission()
 
