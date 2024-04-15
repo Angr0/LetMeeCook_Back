@@ -411,6 +411,19 @@ def flavours(request):
 
 @csrf_exempt
 def shoppingList(request, user_login):
+    if request.method == "GET":
+        operatedUser = AppUser.objects.get(login=user_login)
+        shoppingElements = ShoppingList.objects.filter(appUser=operatedUser)
+        shoppingListElements = []
+        for ingredient in shoppingElements:
+            ingredientDict = {
+                'ingredient_name': ingredient.ingredient.name,
+                'quantity': ingredient.quantity,
+                'unit_name': ingredient.ingredient.unit_name,
+                'icon_link': ingredient.ingredient.icon_link
+            }
+            shoppingListElements.append(ingredientDict)
+        return JsonResponse(shoppingListElements, safe=False, status=200)
     if request.method == "PUT":
         operatedUser = AppUser.objects.get(login=user_login)
         ingredientsDicts = json.loads(request.body)
@@ -446,6 +459,19 @@ def shoppingList(request, user_login):
                 addingStoredIngredient.save()
         ShoppingList.objects.filter(appUser=operatedUser).delete()
         return JsonResponse({"completed shopping list of user": operatedUser.login}, status=200)
+    return noMethodPermission()
+
+
+@csrf_exempt
+def removeShoppingElement(request, user_login):
+    if request.method == "DELETE":
+        operatedUser = AppUser.objects.get(login=user_login)
+        shoppingElementsToDelete = json.loads(request.body)
+        for shoppingElement in shoppingElementsToDelete:
+            ingredientObject = Ingredient.objects.get(name=shoppingElement)
+            ingredientToDelete = ShoppingList.objects.get(appUser=operatedUser, ingredient=ingredientObject)
+            ingredientToDelete.delete()
+            return JsonResponse({"Deleted ingredient from shopping list": shoppingElement}, status=200)
     return noMethodPermission()
 
 
