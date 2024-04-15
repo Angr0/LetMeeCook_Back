@@ -499,5 +499,18 @@ def tickSingleShopping(request, user_login):
     return noMethodPermission()
 
 
+@csrf_exempt
+def likeCheck(request):
+    if request.method == "POST":
+        body = json.loads(request.body)
+        operatedUser = AppUser.objects.get(login=body['user_login'])
+        operatedRecipe = Recipe.objects.get(name=body['recipe'])
+        if operatedRecipe in operatedUser.favourite_recipes.all():
+            return JsonResponse({"is_favourite": True})
+        else:
+            return JsonResponse({"is_favourite": False})
+    return noMethodPermission()
+
+
 def noMethodPermission():
     return JsonResponse({"error": "You have no permission for this method action"}, status=403)
