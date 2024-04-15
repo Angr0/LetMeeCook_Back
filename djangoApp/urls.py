@@ -43,4 +43,5 @@ urlpatterns = [
     path('clear-fridge/<str:user_login>/', views.clearFridge),
     path('shopping-list/<str:user_login>/', views.shoppingList),
     path('remove-shopping-element/<str:user_login>/', views.removeShoppingElement),
+    path('tick-ingredient/<str:user_login>/', views.tickSingleShopping),
 ]
