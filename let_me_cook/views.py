@@ -506,9 +506,9 @@ def likeCheck(request):
         operatedUser = AppUser.objects.get(login=body['user_login'])
         operatedRecipe = Recipe.objects.get(name=body['recipe'])
         if operatedRecipe in operatedUser.favourite_recipes.all():
-            return JsonResponse({"is_favourite": True})
+            return JsonResponse({"is_favourite": True}, status=200)
         else:
-            return JsonResponse({"is_favourite": False})
+            return JsonResponse({"is_favourite": False}, status=200)
     return noMethodPermission()
 
 
