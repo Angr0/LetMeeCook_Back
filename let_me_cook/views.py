@@ -470,6 +470,17 @@ def removeShoppingElement(request, user_login):
         for shoppingElement in shoppingElementsToDelete:
             ingredientObject = Ingredient.objects.get(name=shoppingElement)
             ingredientToDelete = ShoppingList.objects.get(appUser=operatedUser, ingredient=ingredientObject)
+            try:
+                alreadyStoredIngredient = StoredIngredient.objects.get(appUser=operatedUser, ingredient=ingredientObject)
+                alreadyStoredIngredient.quantity += ingredientToDelete.quantity
+                alreadyStoredIngredient.save()
+            except StoredIngredient.DoesNotExist:
+                addingStoredIngredient = StoredIngredient.objects.create(
+                    appUser=operatedUser,
+                    ingredient=ingredientObject,
+                    quantity=ingredientToDelete.quantity
+                )
+                addingStoredIngredient.save()
             ingredientToDelete.delete()
             return JsonResponse({"Deleted ingredient from shopping list": shoppingElement}, status=200)
     return noMethodPermission()
